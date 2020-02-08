@@ -28,19 +28,8 @@ sint64_t evaluate(uint8_t * expression);
 /*---------------------------------------------- main ---------------------------------------------*/
 
 void main(void)
-{
-    /*
-    Stack s;
-    CreateStack(&s);
-    if(!push(e,&s));
-    pop(&e,&s);
-    */
-   /*
-   Queue q;
-   QueueCreate();
-   if(!Enqueue(e,&q));
-   */
-  /*---------------------------------------- Check Balance -----------------------------------*/
+{    
+  /*---------------------------------------- Check Balance (Works-fine) -----------------------------------*/
   /* Test Cases : expressions*/
   //uint8_t * expression = "{[()]}";
   //uint8_t * expression = "{[(]}";
@@ -50,7 +39,9 @@ void main(void)
   //uint8_t * expression = "{[({[(5+3424+032)])]}";  
   //if(!checkForBalancedParantheses(expression)) printf("Unbalanced\n");
   //else printf("Balanced\n");
-  /*-----------------------------------------------------------------------------------------*/
+  /*----------------------------------------- Evaluate Expression (Still has bug)--------------------------------------*/
+  //uint8_t * expression = "( 5 + 6 + 10)";
+  //printf("%d\n",evaluate(expression));
 }
 
 
@@ -58,7 +49,7 @@ void main(void)
 sint64_t evaluate(uint8_t * expression)
 {
     /*Define variables*/
-    uint16_t sum = 0;
+    sint64_t result = 0;
     uint8_t operation_count = 0;
     uint8_t operands = 0;
     uint16_t accumlator = 0;
@@ -74,64 +65,96 @@ sint64_t evaluate(uint8_t * expression)
         /*scan digits till the end of the string*/
         while(*pu8_expressionScanner != '\0')
         {
-            /*check digit*/
+            /*1 - check digit*/
             if(isdigit(*pu8_expressionScanner))
             {
                 /* add to accumlator */
-                accumlator = (accumlator * 10) + (*pu8_expressionScanner - '0');
+                accumlator = (accumlator * 10) + (*pu8_expressionScanner - '0');                
                 /* increament operands */
                 operands++;
-            }
-            /*check operations*/
+            }            
+            /*2 - check operations*/
             switch (*pu8_expressionScanner)
             {
             case ADD:
                 /* Enqeue the operand in accumlator */
-                Enqueue(*pu8_expressionScanner,&q);
+                Enqueue(accumlator,&q);                
                 /* increament operations count*/
                 operation_count++;
                 /* store current operation*/
-                current_operation = ADD;                
+                current_operation = ADD;  
+                /*Reset Accumlator */
+                accumlator = 0;              
                 break;
             case SUB:
                 /* Enqeue the operand in accumlator */
-                Enqueue(*pu8_expressionScanner,&q);
+                Enqueue(accumlator,&q);
                 /* increament operations count*/
                 operation_count++;
                 /* store current operation*/
-                current_operation = SUB;                
+                current_operation = SUB; 
+                /*Reset Accumlator */
+                accumlator = 0;               
                 break;
             case MUL:
                 /* Enqeue the operand in accumlator */
-                Enqueue(*pu8_expressionScanner,&q);
+                Enqueue(accumlator,&q);
                 /* increament operations count*/
                 operation_count++;
                 /* store current operation*/
-                current_operation = MUL;                
+                current_operation = MUL; 
+                /*Reset Accumlator */
+                accumlator = 0;               
                 break;
             case DIV:
                 /* Enqeue the operand in accumlator */
-                Enqueue(*pu8_expressionScanner,&q);
+                Enqueue(accumlator,&q);
                 /* increament operations count*/
                 operation_count++;
                 /* store current operation*/
-                current_operation = DIV;                
+                current_operation = DIV;
+                /*Reset Accumlator */
+                accumlator = 0;                
                 break;            
             }
-            /*check if operation is 1 and operands is 2*/
+            /*3 - check if operation is 1 and operands is 2*/
             if(operation_count == 1 && operands ==2)
             {
+                QueueEntry op1;
+                QueueEntry op2;
                 /*Dequeue first operand*/                
-                /*Deqeue second operand*/
-                /*sum += apply current operation*/
-
+                Dequeue(&op1,&q); 
+                printf("%d\n",op1);                
+                /*Deqeue second operand*/                
+                Dequeue(&op2,&q);
+                printf("%d\n",op2);
+                /*result += apply current operation*/
+                switch (current_operation)
+                {
+                case ADD:
+                    result += (op1 + op2);                    
+                    break;
+                case SUB:
+                    result += (op1 - op2);                    
+                    break;
+                case MUL:
+                    result += (op1 * op2);                    
+                    break;
+                case DIV:
+                    result += (op1 / op2);                    
+                    break;         
+                }                
+                /* reset variables */                 
+                operation_count = 0;
+                operands = 0;
+                accumlator = 0;
             }
-
-
+        /*Increament*/
+        pu8_expressionScanner++;
         }
-
     }
-
+    /*Return result*/
+    return result;
 }
 
 uint8_t checkForBalancedParantheses(uint8_t * expression)
