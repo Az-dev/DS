@@ -29,7 +29,7 @@ sint64_t evaluate(uint8_t * expression);
 
 void main(void)
 {    
-  /*---------------------------------------- Check Balance (Works-fine) -----------------------------------*/
+  /*---------------------------------------- Check Balance -----------------------------------*/
   /* Test Cases : expressions*/
   //uint8_t * expression = "{[()]}";
   //uint8_t * expression = "{[(]}";
@@ -39,30 +39,34 @@ void main(void)
   //uint8_t * expression = "{[({[(5+3424+032)])]}";  
   //if(!checkForBalancedParantheses(expression)) printf("Unbalanced\n");
   //else printf("Balanced\n");
-  /*----------------------------------------- Evaluate Expression (Still has bug)--------------------------------------*/
-  //uint8_t * expression = "( 5 + 6 + 10)";
-  //printf("%d\n",evaluate(expression));
+  /*----------------------------------------- Evaluate Expression --------------------------------------*/
+  /* Test Cases : expressions*/
+  //uint8_t * expression = "(5 + 6 + 9)";
+  //uint8_t * expression = "((5 + 6) * 10 - 9)";
+  //uint8_t * expression = "(((5 + 6) * 10 - 9)/10)";      
+  //printf("%ld\n",evaluate(expression));
 }
-
-
 /*---------------------------------------------- Function Definitions ------------------------------*/
 sint64_t evaluate(uint8_t * expression)
 {
     /*Define variables*/
+    uint8_t isFirstOperation = 1;
     sint64_t result = 0;
-    uint8_t operation_count = 0;
-    uint8_t operands = 0;
     uint16_t accumlator = 0;
-    MathSymbols current_operation;    
+    QueueEntry op1;
+    QueueEntry op2;
+    MathSymbols operation;
     /*create calculation queue*/
-    Queue q;
-    CreateQueue(&q);
+    Queue operand_q;
+    Queue operation_q;
+    CreateQueue(&operand_q);
+    CreateQueue(&operation_q);
     /* Check Expression for balance*/
     if(checkForBalancedParantheses(expression))
     {
         /*Create and intialize expression scanner*/
         uint8_t * pu8_expressionScanner = expression;
-        /*scan digits till the end of the string*/
+        /*scan till the end of the string*/
         while(*pu8_expressionScanner != '\0')
         {
             /*1 - check digit*/
@@ -70,89 +74,84 @@ sint64_t evaluate(uint8_t * expression)
             {
                 /* add to accumlator */
                 accumlator = (accumlator * 10) + (*pu8_expressionScanner - '0');                
-                /* increament operands */
-                operands++;
             }            
             /*2 - check operations*/
             switch (*pu8_expressionScanner)
             {
-            case ADD:
-                /* Enqeue the operand in accumlator */
-                Enqueue(accumlator,&q);                
-                /* increament operations count*/
-                operation_count++;
-                /* store current operation*/
-                current_operation = ADD;  
-                /*Reset Accumlator */
-                accumlator = 0;              
-                break;
-            case SUB:
-                /* Enqeue the operand in accumlator */
-                Enqueue(accumlator,&q);
-                /* increament operations count*/
-                operation_count++;
-                /* store current operation*/
-                current_operation = SUB; 
-                /*Reset Accumlator */
-                accumlator = 0;               
-                break;
-            case MUL:
-                /* Enqeue the operand in accumlator */
-                Enqueue(accumlator,&q);
-                /* increament operations count*/
-                operation_count++;
-                /* store current operation*/
-                current_operation = MUL; 
-                /*Reset Accumlator */
-                accumlator = 0;               
-                break;
-            case DIV:
-                /* Enqeue the operand in accumlator */
-                Enqueue(accumlator,&q);
-                /* increament operations count*/
-                operation_count++;
-                /* store current operation*/
-                current_operation = DIV;
-                /*Reset Accumlator */
-                accumlator = 0;                
-                break;            
-            }
-            /*3 - check if operation is 1 and operands is 2*/
-            if(operation_count == 1 && operands ==2)
-            {
-                QueueEntry op1;
-                QueueEntry op2;
-                /*Dequeue first operand*/                
-                Dequeue(&op1,&q); 
-                printf("%d\n",op1);                
-                /*Deqeue second operand*/                
-                Dequeue(&op2,&q);
-                printf("%d\n",op2);
-                /*result += apply current operation*/
-                switch (current_operation)
-                {
                 case ADD:
-                    result += (op1 + op2);                    
+                    /* Enqeue the operand */
+                    Enqueue(accumlator,&operand_q); 
+                    /* Enqeue the operation*/
+                    Enqueue(*pu8_expressionScanner,&operation_q);
+                    /*Reset Accumlator */
+                    accumlator = 0;              
                     break;
                 case SUB:
-                    result += (op1 - op2);                    
+                    /* Enqeue the operand */
+                    Enqueue(accumlator,&operand_q); 
+                    /* Enqeue the operation*/
+                    Enqueue(*pu8_expressionScanner,&operation_q);
+                    /*Reset Accumlator */
+                    accumlator = 0;               
                     break;
                 case MUL:
-                    result += (op1 * op2);                    
+                    /* Enqeue the operand */
+                    Enqueue(accumlator,&operand_q); 
+                    /* Enqeue the operation*/
+                    Enqueue(*pu8_expressionScanner,&operation_q);
+                    /*Reset Accumlator */
+                    accumlator = 0;               
                     break;
                 case DIV:
-                    result += (op1 / op2);                    
-                    break;         
-                }                
-                /* reset variables */                 
-                operation_count = 0;
-                operands = 0;
-                accumlator = 0;
-            }
-        /*Increament*/
-        pu8_expressionScanner++;
+                    /* Enqeue the operand */
+                    Enqueue(accumlator,&operand_q); 
+                    /* Enqeue the operation*/
+                    Enqueue(*pu8_expressionScanner,&operation_q);
+                    /*Reset Accumlator */
+                    accumlator = 0;                
+                    break;            
+            }          
+            /*Increament*/
+            pu8_expressionScanner++;
         }
-    }
+        /*Enqueue last operand*/                
+        Enqueue(accumlator,&operand_q);
+        /* reset accumlator */ 
+        accumlator = 0;        
+        /*evaluation loop*/
+        while(!QueueEmpty(&operation_q))
+        {
+            if(isFirstOperation == 1)
+            {
+                /*Dequeue first operand*/
+                Dequeue(&op1,&operand_q);                
+                /*clear isFirstOperation*/
+                isFirstOperation = 0;
+            }else{
+                op1 = (StackEntry) result;                
+            }
+            /*Dequeue operation*/
+            Dequeue(&operation,&operation_q);
+            /*Dequeue second operand*/
+            Dequeue(&op2,&operand_q);
+            /*result += apply current operation*/            
+            switch (operation)
+            {
+            case ADD:
+                result = (op1 + op2);                                               
+                break;
+            case SUB:
+                result = (op1 - op2);                    
+                break;
+            case MUL:
+                result = (op1 * op2);                    
+                break;
+            case DIV:
+                result = (op1 / op2);                    
+                break;         
+            } 
+        }       
+    }    
     /*Return result*/
     return result;
 }
