@@ -67,7 +67,7 @@ uint8_t Enqueue(QueueEntry e , Queue * q)
 void Dequeue(QueueEntry * e , Queue * q)
 {    
     /* Create p_temp to point to the node referenced by q->p_front which is the first node*/
-    QueueNode * p_temp = q->p_rear;
+    QueueNode * p_temp = q->p_front;
     /* store node entry in (e)*/
     (*e) = q->p_front->entry;
     /* make q->p_front point to the next element*/
@@ -89,7 +89,7 @@ void Dequeue(QueueEntry * e , Queue * q)
 */
 uint8_t QueueEmpty(Queue * q)
 {
-    return !q->p_rear;
+    return (q->size == 0);
 }
 
 /*
